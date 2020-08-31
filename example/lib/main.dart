@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -127,6 +128,12 @@ class MainScreen extends StatelessWidget {
             androidNotificationColor: 0xFF2196f3,
             androidNotificationIcon: 'mipmap/ic_launcher',
             androidEnableQueue: true,
+            params: {
+              "mediaItems": <String>[
+                '{"id":"https://dvrdu8vzaqv02.cloudfront.net/sample_mp4_file_187217ca6d.mp4","album":"Secrets of Hagia Sophia","title":"Front door of Suleymaniye","artist":"Merve Çoban","duration":52000,"artUri":"https://dvrdu8vzaqv02.cloudfront.net/Suleymaniye_Mosque_in_Istanbul_de277a86b1.jpeg"}',
+                '{"id":"https://dvrdu8vzaqv02.cloudfront.net/sample_mp4_file_187217ca6d.mp4","album":"Secrets of Hagia Sophia","title":"Garden of third section","artist":"Merve Çoban","duration":102000,"artUri":"https://dvrdu8vzaqv02.cloudfront.net/IZ_229lanh0qqi_YGOS_w_Pu_DQ_21138ff3f6.jpeg"}'
+              ],
+            }
           );
         },
       );
@@ -229,7 +236,7 @@ class AudioPlayerTask extends BackgroundAudioTask {
   Seeker _seeker;
   StreamSubscription<PlaybackEvent> _eventSubscription;
 
-  List<MediaItem> get queue => _mediaLibrary.items;
+  List<MediaItem> queue;
   int get index => _player.currentIndex;
   MediaItem get mediaItem => index == null ? null : queue[index];
 
@@ -240,6 +247,9 @@ class AudioPlayerTask extends BackgroundAudioTask {
     // switch between two types of audio as this example does.
     final session = await AudioSession.instance;
     await session.configure(AudioSessionConfiguration.speech());
+    final mediaItemsJson = params["mediaItems"];
+    print("mediaItems: $mediaItemsJson");
+    queue = _getQueueFromJson(mediaItemsJson);
     // Broadcast media item changes.
     _player.currentIndexStream.listen((index) {
       if (index != null) AudioServiceBackground.setMediaItem(queue[index]);
@@ -278,6 +288,13 @@ class AudioPlayerTask extends BackgroundAudioTask {
       print("Error: $e");
       onStop();
     }
+  }
+
+  List<MediaItem> _getQueueFromJson(List<String> mediaItemsJson) {
+    print("Getting queue from JSON");
+    return mediaItemsJson.map((mediaItem) {
+      return MediaItem.fromJson(json.decode(mediaItem));
+    }).toList();
   }
 
   @override
